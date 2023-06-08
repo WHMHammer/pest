@@ -10,9 +10,15 @@
 use crate::ast::*;
 
 pub fn concatenate(rule: Rule) -> Rule {
-    let Rule { name, ty, expr } = rule;
+    let Rule {
+        name,
+        silent,
+        ty,
+        expr,
+    } = rule;
     Rule {
         name,
+        silent,
         ty,
         expr: expr.map_bottom_up(|expr| {
             if ty == RuleType::Atomic {

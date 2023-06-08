@@ -276,56 +276,59 @@ fn generate_rule(rule: OptimizedRule) -> TokenStream {
 
     let box_ty = box_type();
 
-    match rule.ty {
-        RuleType::Normal => quote! {
-            #[inline]
-            #[allow(non_snake_case, unused_variables)]
-            pub fn #name(state: #box_ty<::pest::ParserState<'_, Rule>>) -> ::pest::ParseResult<#box_ty<::pest::ParserState<'_, Rule>>> {
-                state.rule(Rule::#name, |state| {
-                    #expr
-                })
-            }
-        },
-        RuleType::Silent => quote! {
+    if rule.silent {
+        quote! {
             #[inline]
             #[allow(non_snake_case, unused_variables)]
             pub fn #name(state: #box_ty<::pest::ParserState<'_, Rule>>) -> ::pest::ParseResult<#box_ty<::pest::ParserState<'_, Rule>>> {
                 #expr
             }
-        },
-        RuleType::Atomic => quote! {
-            #[inline]
-            #[allow(non_snake_case, unused_variables)]
-            pub fn #name(state: #box_ty<::pest::ParserState<'_, Rule>>) -> ::pest::ParseResult<#box_ty<::pest::ParserState<'_, Rule>>> {
-                state.rule(Rule::#name, |state| {
-                    state.atomic(::pest::Atomicity::Atomic, |state| {
-                        #expr
-                    })
-                })
-            }
-        },
-        RuleType::CompoundAtomic => quote! {
-            #[inline]
-            #[allow(non_snake_case, unused_variables)]
-            pub fn #name(state: #box_ty<::pest::ParserState<'_, Rule>>) -> ::pest::ParseResult<#box_ty<::pest::ParserState<'_, Rule>>> {
-                state.atomic(::pest::Atomicity::CompoundAtomic, |state| {
+        }
+    } else {
+        match rule.ty {
+            RuleType::Normal => quote! {
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn #name(state: #box_ty<::pest::ParserState<'_, Rule>>) -> ::pest::ParseResult<#box_ty<::pest::ParserState<'_, Rule>>> {
                     state.rule(Rule::#name, |state| {
                         #expr
                     })
-                })
-            }
-        },
-        RuleType::NonAtomic => quote! {
-            #[inline]
-            #[allow(non_snake_case, unused_variables)]
-            pub fn #name(state: #box_ty<::pest::ParserState<'_, Rule>>) -> ::pest::ParseResult<#box_ty<::pest::ParserState<'_, Rule>>> {
-                state.atomic(::pest::Atomicity::NonAtomic, |state| {
+                }
+            },
+            RuleType::Atomic => quote! {
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn #name(state: #box_ty<::pest::ParserState<'_, Rule>>) -> ::pest::ParseResult<#box_ty<::pest::ParserState<'_, Rule>>> {
                     state.rule(Rule::#name, |state| {
-                        #expr
+                        state.atomic(::pest::Atomicity::Atomic, |state| {
+                            #expr
+                        })
                     })
-                })
-            }
-        },
+                }
+            },
+            RuleType::CompoundAtomic => quote! {
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn #name(state: #box_ty<::pest::ParserState<'_, Rule>>) -> ::pest::ParseResult<#box_ty<::pest::ParserState<'_, Rule>>> {
+                    state.atomic(::pest::Atomicity::CompoundAtomic, |state| {
+                        state.rule(Rule::#name, |state| {
+                            #expr
+                        })
+                    })
+                }
+            },
+            RuleType::NonAtomic => quote! {
+                #[inline]
+                #[allow(non_snake_case, unused_variables)]
+                pub fn #name(state: #box_ty<::pest::ParserState<'_, Rule>>) -> ::pest::ParseResult<#box_ty<::pest::ParserState<'_, Rule>>> {
+                    state.atomic(::pest::Atomicity::NonAtomic, |state| {
+                        state.rule(Rule::#name, |state| {
+                            #expr
+                        })
+                    })
+                }
+            },
+        }
     }
 }
 
@@ -711,6 +714,7 @@ mod tests {
     fn rule_enum_simple() {
         let rules = vec![OptimizedRule {
             name: "f".to_owned(),
+            silent: false,
             ty: RuleType::Normal,
             expr: OptimizedExpr::Ident("g".to_owned()),
         }];
@@ -1020,12 +1024,14 @@ mod tests {
         let rules = vec![
             OptimizedRule {
                 name: "a".to_owned(),
-                ty: RuleType::Silent,
+                silent: true,
+                ty: RuleType::Normal,
                 expr: OptimizedExpr::Str("b".to_owned()),
             },
             OptimizedRule {
                 name: "if".to_owned(),
-                ty: RuleType::Silent,
+                silent: true,
+                ty: RuleType::Normal,
                 expr: OptimizedExpr::Ident("a".to_owned()),
             },
         ];

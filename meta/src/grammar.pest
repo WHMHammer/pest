@@ -20,7 +20,7 @@ grammar_rules = _{ SOI ~ grammar_doc* ~ grammar_rule* ~ EOI }
 
 /// A rule of a grammar.
 grammar_rule = {
-    identifier ~ assignment_operator ~ modifier? ~ opening_brace ~ expression ~ closing_brace
+    identifier ~ assignment_operator ~ silent_modifier? ~ modifier? ~ opening_brace ~ expression ~ closing_brace
   | line_doc
 }
 
@@ -45,16 +45,15 @@ opening_brack = { "[" }
 /// Closing bracket for PEEK (slice inside).
 closing_brack = { "]" }
 
+/// Silent rule prefix.
+silent_modifier = { "_" }
+
 /// A rule modifier.
 modifier = _{
-    silent_modifier
-  | atomic_modifier
+    atomic_modifier
   | compound_atomic_modifier
   | non_atomic_modifier
 }
-
-/// Silent rule prefix.
-silent_modifier = { "_" }
 
 /// Atomic rule prefix.
 atomic_modifier = { "@" }

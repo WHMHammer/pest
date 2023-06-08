@@ -41,6 +41,8 @@ pub struct ParserRule<'i> {
     pub name: String,
     /// The rule's span
     pub span: Span<'i>,
+    /// The rule's silentness
+    pub silent: bool,
     /// The rule's type
     pub ty: RuleType,
     /// The rule's parser node
@@ -163,9 +165,20 @@ pub enum ParserExpr<'i> {
 }
 
 fn convert_rule(rule: ParserRule<'_>) -> AstRule {
-    let ParserRule { name, ty, node, .. } = rule;
+    let ParserRule {
+        name,
+        silent,
+        ty,
+        node,
+        ..
+    } = rule;
     let expr = convert_node(node);
-    AstRule { name, ty, expr }
+    AstRule {
+        name,
+        silent,
+        ty,
+        expr,
+    }
 }
 
 fn convert_node(node: ParserNode<'_>) -> Expr {
@@ -270,9 +283,15 @@ fn consume_rules_with_spans(
 
             pairs.next().unwrap(); // assignment_operator
 
+            let silent = if pairs.peek().unwrap().as_rule() == Rule::silent_modifier {
+                pairs.next().unwrap();
+                true
+            } else {
+                false
+            };
+
             let ty = if pairs.peek().unwrap().as_rule() != Rule::opening_brace {
                 match pairs.next().unwrap().as_rule() {
-                    Rule::silent_modifier => RuleType::Silent,
                     Rule::atomic_modifier => RuleType::Atomic,
                     Rule::compound_atomic_modifier => RuleType::CompoundAtomic,
                     Rule::non_atomic_modifier => RuleType::NonAtomic,
@@ -295,6 +314,7 @@ fn consume_rules_with_spans(
             Ok(ParserRule {
                 name,
                 span,
+                silent,
                 ty,
                 node,
             })
@@ -1474,7 +1494,8 @@ mod tests {
             ast,
             vec![AstRule {
                 name: "rule".to_owned(),
-                ty: RuleType::Silent,
+                silent: true,
+                ty: RuleType::Normal,
                 expr: Expr::Choice(
                     Box::new(Expr::Seq(
                         Box::new(Expr::Seq(
@@ -1512,7 +1533,8 @@ mod tests {
             ast,
             vec![AstRule {
                 name: "rule".to_owned(),
-                ty: RuleType::Silent,
+                silent: true,
+                ty: RuleType::Normal,
                 expr: Expr::Seq(
                     Box::new(Expr::PeekSlice(-4, None)),
                     Box::new(Expr::PeekSlice(0, Some(3))),

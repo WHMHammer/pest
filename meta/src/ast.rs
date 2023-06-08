@@ -14,7 +14,9 @@
 pub struct Rule {
     /// The name of the rule
     pub name: String,
-    /// The rule's type (silent, atomic, ...)
+    /// The rule's silentness
+    pub silent: bool,
+    /// The rule's type (atomic, ...)
     pub ty: RuleType,
     /// The rule's expression
     pub expr: Expr,
@@ -25,12 +27,6 @@ pub struct Rule {
 pub enum RuleType {
     /// The normal rule type
     Normal,
-    /// Silent rules are just like normal rules
-    /// — when run, they function the same way —
-    /// except they do not produce pairs or tokens.
-    /// If a rule is silent, it will never appear in a parse result.
-    /// (their syntax is `_{ ... }`)
-    Silent,
     /// atomic rule prevent implicit whitespace: inside an atomic rule,
     /// the tilde ~ means "immediately followed by",
     /// and repetition operators (asterisk * and plus sign +)

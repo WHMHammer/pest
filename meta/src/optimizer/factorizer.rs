@@ -10,9 +10,15 @@
 use crate::ast::*;
 
 pub fn factor(rule: Rule) -> Rule {
-    let Rule { name, ty, expr } = rule;
+    let Rule {
+        name,
+        silent,
+        ty,
+        expr,
+    } = rule;
     Rule {
         name,
+        silent,
         ty,
         expr: expr.map_top_down(|expr| {
             match expr {

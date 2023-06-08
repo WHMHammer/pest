@@ -10,9 +10,15 @@
 use crate::ast::*;
 
 pub fn unroll(rule: Rule) -> Rule {
-    let Rule { name, ty, expr } = rule;
+    let Rule {
+        name,
+        silent,
+        ty,
+        expr,
+    } = rule;
     Rule {
         name,
+        silent,
         ty,
         expr: expr.map_bottom_up(|expr| match expr {
             Expr::RepOnce(expr) => Expr::Seq(expr.clone(), Box::new(Expr::Rep(expr))),

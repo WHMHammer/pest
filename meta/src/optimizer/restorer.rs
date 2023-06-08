@@ -14,9 +14,19 @@ pub fn restore_on_err(
     rule: OptimizedRule,
     rules: &HashMap<String, OptimizedExpr>,
 ) -> OptimizedRule {
-    let OptimizedRule { name, ty, expr } = rule;
+    let OptimizedRule {
+        name,
+        silent,
+        ty,
+        expr,
+    } = rule;
     let expr = expr.map_bottom_up(|expr| wrap_branching_exprs(expr, rules));
-    OptimizedRule { name, ty, expr }
+    OptimizedRule {
+        name,
+        silent,
+        ty,
+        expr,
+    }
 }
 
 fn wrap_branching_exprs(
@@ -98,6 +108,7 @@ mod tests {
     fn restore_no_stack_children() {
         let rules = vec![OptimizedRule {
             name: "rule".to_owned(),
+            silent: false,
             ty: RuleType::Normal,
             expr: box_tree!(Opt(Str("a".to_string()))),
         }];
@@ -112,12 +123,14 @@ mod tests {
     fn restore_with_child_stack_ops() {
         let rules = vec![OptimizedRule {
             name: "rule".to_owned(),
+            silent: false,
             ty: RuleType::Normal,
             expr: box_tree!(Rep(Push(Str("a".to_string())))),
         }];
 
         let restored = OptimizedRule {
             name: "rule".to_owned(),
+            silent: false,
             ty: RuleType::Normal,
             expr: box_tree!(Rep(RestoreOnErr(Push(Str("a".to_string()))))),
         };
@@ -132,12 +145,14 @@ mod tests {
     fn restore_choice_branch_with_and_branch_without() {
         let rules = vec![OptimizedRule {
             name: "rule".to_owned(),
+            silent: false,
             ty: RuleType::Normal,
             expr: box_tree!(Choice(Push(Str("a".to_string())), Str("a".to_string()))),
         }];
 
         let restored = OptimizedRule {
             name: "rule".to_owned(),
+            silent: false,
             ty: RuleType::Normal,
             expr: box_tree!(Choice(
                 RestoreOnErr(Push(Str("a".to_string()))),

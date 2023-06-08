@@ -127,46 +127,54 @@ impl Vm {
 
         if let Some(rule) = self.rules.get(rule) {
             if rule.name == "WHITESPACE" || rule.name == "COMMENT" {
-                match rule.ty {
-                    RuleType::Normal => state.rule(&rule.name, |state| {
-                        state.atomic(Atomicity::Atomic, |state| {
-                            self.parse_expr(&rule.expr, state)
-                        })
-                    }),
-                    RuleType::Silent => state.atomic(Atomicity::Atomic, |state| {
+                if rule.silent {
+                    state.atomic(Atomicity::Atomic, |state| {
                         self.parse_expr(&rule.expr, state)
-                    }),
-                    RuleType::Atomic => state.rule(&rule.name, |state| {
-                        state.atomic(Atomicity::Atomic, |state| {
-                            self.parse_expr(&rule.expr, state)
-                        })
-                    }),
-                    RuleType::CompoundAtomic => state.atomic(Atomicity::CompoundAtomic, |state| {
-                        state.rule(&rule.name, |state| self.parse_expr(&rule.expr, state))
-                    }),
-                    RuleType::NonAtomic => state.atomic(Atomicity::Atomic, |state| {
-                        state.rule(&rule.name, |state| self.parse_expr(&rule.expr, state))
-                    }),
+                    })
+                } else {
+                    match rule.ty {
+                        RuleType::Normal => state.rule(&rule.name, |state| {
+                            state.atomic(Atomicity::Atomic, |state| {
+                                self.parse_expr(&rule.expr, state)
+                            })
+                        }),
+                        RuleType::Atomic => state.rule(&rule.name, |state| {
+                            state.atomic(Atomicity::Atomic, |state| {
+                                self.parse_expr(&rule.expr, state)
+                            })
+                        }),
+                        RuleType::CompoundAtomic => {
+                            state.atomic(Atomicity::CompoundAtomic, |state| {
+                                state.rule(&rule.name, |state| self.parse_expr(&rule.expr, state))
+                            })
+                        }
+                        RuleType::NonAtomic => state.atomic(Atomicity::Atomic, |state| {
+                            state.rule(&rule.name, |state| self.parse_expr(&rule.expr, state))
+                        }),
+                    }
                 }
             } else {
-                match rule.ty {
-                    RuleType::Normal => {
-                        state.rule(&rule.name, move |state| self.parse_expr(&rule.expr, state))
-                    }
-                    RuleType::Silent => self.parse_expr(&rule.expr, state),
-                    RuleType::Atomic => state.rule(&rule.name, move |state| {
-                        state.atomic(Atomicity::Atomic, move |state| {
-                            self.parse_expr(&rule.expr, state)
-                        })
-                    }),
-                    RuleType::CompoundAtomic => {
-                        state.atomic(Atomicity::CompoundAtomic, move |state| {
+                if rule.silent {
+                    self.parse_expr(&rule.expr, state)
+                } else {
+                    match rule.ty {
+                        RuleType::Normal => {
+                            state.rule(&rule.name, move |state| self.parse_expr(&rule.expr, state))
+                        }
+                        RuleType::Atomic => state.rule(&rule.name, move |state| {
+                            state.atomic(Atomicity::Atomic, move |state| {
+                                self.parse_expr(&rule.expr, state)
+                            })
+                        }),
+                        RuleType::CompoundAtomic => {
+                            state.atomic(Atomicity::CompoundAtomic, move |state| {
+                                state.rule(&rule.name, |state| self.parse_expr(&rule.expr, state))
+                            })
+                        }
+                        RuleType::NonAtomic => state.atomic(Atomicity::NonAtomic, move |state| {
                             state.rule(&rule.name, |state| self.parse_expr(&rule.expr, state))
-                        })
+                        }),
                     }
-                    RuleType::NonAtomic => state.atomic(Atomicity::NonAtomic, move |state| {
-                        state.rule(&rule.name, |state| self.parse_expr(&rule.expr, state))
-                    }),
                 }
             }
         } else {

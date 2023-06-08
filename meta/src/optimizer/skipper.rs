@@ -28,9 +28,15 @@ pub fn skip(rule: Rule) -> Rule {
         }
     }
 
-    let Rule { name, ty, expr } = rule;
+    let Rule {
+        name,
+        silent,
+        ty,
+        expr,
+    } = rule;
     Rule {
         name,
+        silent,
         ty,
         expr: if ty == RuleType::Atomic {
             expr.map_top_down(|expr| {
